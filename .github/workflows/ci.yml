@@ -33,3 +33,13 @@ jobs:
       - name: Run tests
         run: python -m pytest -v
 
+      - name: Run Bandit security scan
+        run: |
+          python -m pip install bandit
+          bandit -r app -ll
+
+      - name: Audit dependencies
+        run: |
+          python -m pip install pip-audit
+
+          pip-audit -r requirements.txt
