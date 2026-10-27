@@ -1,4 +1,3 @@
-
 name: Secure Task Manager CI
 
 on:
@@ -11,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Run Tests and Security Checks
+  test-and-build:
+    name: Test, Scan, and Build
     runs-on: ubuntu-latest
 
     steps:
@@ -33,7 +32,7 @@ jobs:
           python -m pip install pytest httpx bandit pip-audit
 
       - name: Run tests
-        run: python -m pytest -v
+        run: python -m pytest -v --tb=long
 
       - name: Run Bandit security scan
         run: bandit -r app -ll
@@ -44,3 +43,38 @@ jobs:
       - name: Build Docker image
         run: docker build -t secure-task-manager:test .
 
+      - name: Test Docker container
+        run: |
+          set -eu
+
+          container_name=secure-task-manager-ci
+          trap 'docker rm -f "$container_name" >/dev/null 2>&1 || true' EXIT
+
+          docker run -d \
+            --name "$container_name" \
+            -p 127.0.0.1:8000:8000 \
+            secure-task-manager:test
+
+          ready=0
+
+          for i in $(seq 1 15); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              ready=1
+              break
+            fi
+
+            sleep 2
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            docker logs "$container_name"
+            exit 1
+          fi
+
+          echo
+          echo "Checking tasks endpoint..."
+          curl --fail --silent --show-error \
+            http://127.0.0.1:8000/tasks/
+
+          echo
+          echo "Docker runtime tests passed."

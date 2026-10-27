@@ -1,0 +1,12 @@
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - task_data:/data
+    restart: unless-stopped
+
+volumes:
+  task_data:
