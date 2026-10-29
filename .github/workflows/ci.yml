@@ -23,16 +23,19 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install pytest httpx bandit pip-audit
+          python -m pip install -r requirements-dev.txt
 
-      - name: Run tests
-        run: python -m pytest -v --tb=long
+      - name: Run tests with coverage
+        run: |
+          python -m pytest -v --tb=long \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-fail-under=85
 
       - name: Run Bandit security scan
         run: bandit -r app -ll
@@ -77,4 +80,13 @@ jobs:
             http://127.0.0.1:8000/tasks/
 
           echo
+          echo "Checking task creation..."
+          response=$(curl --fail --silent --show-error \
+            -X POST http://127.0.0.1:8000/tasks/ \
+            -H "Content-Type: application/json" \
+            -d '{"title":"ci-smoke-test"}')
+
+          echo "$response"
+          echo "$response" | grep -q '"title":"ci-smoke-test"'
+
           echo "Docker runtime tests passed."

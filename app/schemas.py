@@ -26,12 +26,9 @@ class TaskUpdate(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def title_must_not_be_blank(
-        cls,
-        value: str | None,
-    ) -> str | None:
+    def title_must_not_be_blank(cls, value: str | None) -> str | None:
         if value is None:
-            return value
+            raise ValueError("Title must not be null")
 
         value = value.strip()
 
