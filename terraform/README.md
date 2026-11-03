@@ -1,6 +1,6 @@
 # AWS infrastructure
 
-Terraform provisions the portfolio environment:
+Terraform provisions a portfolio environment containing:
 
 - VPC with two public application/ALB subnets and two private database subnets.
 - Internet Gateway and public routing.
@@ -12,9 +12,9 @@ Terraform provisions the portfolio environment:
 - Secrets Manager database password.
 - GitHub Actions OIDC provider and branch-restricted deployment role.
 
-## Important network trade-off
+## Network and cost trade-off
 
-To avoid a NAT Gateway's recurring cost, the initial learning environment runs Fargate tasks in public subnets with public IP assignment. Their security group accepts inbound application traffic only from the ALB security group; the tasks are not open to unsolicited internet ingress. The RDS database is in private subnets and accepts PostgreSQL only from the application security group.
+To avoid a NAT Gateway's recurring cost, the initial learning environment runs Fargate tasks in public subnets with public IP assignment. Their security group accepts inbound application traffic only from the ALB security group; tasks are not open to unsolicited internet ingress. RDS is in private subnets and accepts PostgreSQL only from the application security group.
 
 For a stricter production topology, move tasks to private subnets and add VPC endpoints or NAT egress as required. This has additional cost and is intentionally not provisioned by this starter configuration.
 
@@ -26,12 +26,33 @@ For a stricter production topology, move tasks to private subnets and add VPC en
 4. Run `terraform init`, `terraform fmt -check -recursive`, `terraform validate`, and `terraform plan`.
 5. Review every resource and cost before running `terraform apply`.
 
-Terraform state contains the generated database password and other infrastructure metadata. Protect state as a secret, use encrypted storage with restricted access, and never commit it. For a team environment, configure a protected remote state backend before applying.
+Terraform state contains the generated database password and infrastructure metadata. Protect state as a secret, use encrypted storage with restricted access, and never commit it. Configure a protected remote state backend before using this as a team environment.
 
 The optional ACM certificate enables HTTPS. Without one, the ALB exposes HTTP for a disposable demonstration only; do not send sensitive data over that endpoint.
 
-## Bootstrap note
+## GitHub Actions deployment configuration
 
-ECS initially references an image tag named `bootstrap`. The first deployment workflow builds and pushes the initial image before replacing the task definition image with the commit-specific immutable tag. Run the first deployment after Terraform has created the infrastructure. If the initial service cannot start before the first image push, deploy the first image and then force a new ECS deployment.
+After Terraform has been applied, create a GitHub Environment named `aws-portfolio`. Add these environment variables:
 
-Destroy temporary resources with `terraform destroy` when finished. Check RDS deletion and snapshot settings before doing so.
+| Variable | Value |
+|---|---|
+| `AWS_REGION` | Terraform `aws_region` output |
+| `AWS_DEPLOY_ROLE_ARN` | Terraform `github_deploy_role_arn` output |
+| `ECR_REPOSITORY` | ECR repository name, e.g. `secure-task-manager-portfolio` |
+| `ECS_CLUSTER` | Terraform `ecs_cluster_name` output |
+| `ECS_SERVICE` | Terraform `ecs_service_name` output |
+| `ECS_TASK_FAMILY` | Terraform `ecs_task_definition_family` output |
+| `ECS_CONTAINER_NAME` | Terraform `ecs_container_name` output |
+| `ECS_SUBNET_IDS` | Two Terraform `ecs_public_subnet_ids` values, comma-separated |
+| `ECS_SECURITY_GROUP_ID` | Terraform `ecs_security_group_id` output |
+| `APP_BASE_URL` | Terraform `application_url` output |
+
+The workflow uses GitHub OIDC and does not require stored AWS access keys. Its IAM trust policy permits only the configured repository branch. The workflow builds an immutable commit-tagged image, runs Alembic migrations as a one-off Fargate task, updates ECS, waits for service stability, and checks `/ready`.
+
+## Bootstrap sequence
+
+The initial ECS task definition references a placeholder `bootstrap` image. Terraform creates the registry and service, but the service cannot become healthy until a real image is pushed. Run the deployment workflow after infrastructure creation and after adding the GitHub Environment variables.
+
+## Cost and teardown
+
+This is not a zero-cost deployment. ALB and RDS may accrue charges while idle. Review current regional prices before applying. Destroy temporary resources with `terraform destroy` when finished; review RDS deletion and snapshot settings first.
