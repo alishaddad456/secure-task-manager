@@ -2,37 +2,24 @@
 
 A portfolio project demonstrating secure API development and a practical AWS DevSecOps delivery workflow.
 
-> **Project status:** Application and baseline CI are implemented. AWS infrastructure and deployment are being built on the `aws-infrastructure` branch. No AWS resources are created by this repository automatically.
-
 ## Project goals
 
-This project is designed to demonstrate skills expected in junior Cloud / DevSecOps roles:
+- Python REST API development with FastAPI and SQLAlchemy.
+- PostgreSQL support with versioned Alembic migrations; SQLite remains available locally.
+- Non-root Docker containerization and runtime health checks.
+- Automated tests, coverage enforcement, static analysis, dependency auditing, and container scanning.
+- AWS infrastructure as code with Terraform.
+- Amazon ECR and Amazon ECS Fargate deployment.
+- Amazon RDS for PostgreSQL, Secrets Manager, IAM least privilege, and GitHub OIDC.
+- CloudWatch logging and health-based deployment verification.
 
-- Build and test a Python REST API with FastAPI and SQLAlchemy.
-- Package the application as a non-root Docker container.
-- Run automated tests and security checks in GitHub Actions.
-- Provision AWS infrastructure as code with Terraform.
-- Publish container images to Amazon ECR and deploy to Amazon ECS Fargate.
-- Use Amazon RDS for PostgreSQL, AWS Secrets Manager for database credentials, and CloudWatch for logs and monitoring.
+## AWS architecture
 
-## Architecture target
-
-The planned AWS deployment uses:
-
-- **Amazon ECR** — private container image registry.
-- **Amazon ECS on Fargate** — managed container runtime.
-- **Application Load Balancer** — HTTPS entry point and traffic routing.
-- **Amazon RDS for PostgreSQL** — persistent application data.
-- **AWS Secrets Manager** — database credentials injected at runtime.
-- **Amazon CloudWatch** — application logs, metrics, and alarms.
-- **Terraform** — repeatable infrastructure provisioning.
-- **GitHub Actions + GitHub OIDC** — CI/CD without long-lived AWS access keys.
-
-See [docs/architecture.md](docs/architecture.md) for the design and security decisions. This is a target design; components will be marked complete only after they are implemented and verified.
+The target environment provisions a public Application Load Balancer, ECS Fargate tasks in public subnets with inbound access restricted to the ALB security group, and a private RDS PostgreSQL database. This initial design avoids a NAT Gateway to reduce recurring costs. Review [docs/architecture.md](docs/architecture.md) and [terraform/README.md](terraform/README.md) for trade-offs and setup instructions.
 
 ## Run locally
 
-Requirements: Python 3.13+, pip, and (optionally) Docker.
+Requirements: Python 3.13+, pip.
 
 ```bash
 git clone https://github.com/alishaddad456/secure-task-manager.git
@@ -43,16 +30,24 @@ source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 python -m pip install -r requirements-dev.txt
 
 cp .env.example .env
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-The local default uses SQLite. The API is available at:
+The local default uses SQLite. API endpoints:
 
 - Health: http://127.0.0.1:8000/health
+- Readiness (includes database connectivity): http://127.0.0.1:8000/ready
 - Interactive API docs: http://127.0.0.1:8000/docs
 - Tasks: http://127.0.0.1:8000/tasks/
 
-## Run tests and security checks
+Run with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+## Tests and security checks
 
 ```bash
 pytest -v --cov=app --cov-report=term-missing --cov-fail-under=85
@@ -60,61 +55,51 @@ bandit -r app -ll
 pip-audit -r requirements.txt
 ```
 
-Build and run the container:
-
-```bash
-docker build -t secure-task-manager:local .
-docker run --rm -p 8000:8000 secure-task-manager:local
-```
+GitHub Actions additionally runs Trivy container scanning and Terraform validation/Checkov scanning.
 
 ## API endpoints
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| GET | `/health` | Application health check |
+| GET | `/health` | Liveness check |
+| GET | `/ready` | Database readiness check |
 | GET | `/tasks/` | List tasks (paginated) |
 | GET | `/tasks/{task_id}` | Retrieve a task |
 | POST | `/tasks/` | Create a task |
 | PUT | `/tasks/{task_id}` | Update a task |
 | DELETE | `/tasks/{task_id}` | Delete a task |
 
+## CI/CD workflow
+
+The CI workflow runs tests, coverage enforcement, Bandit, pip-audit, Docker build/runtime smoke tests, Trivy image scanning, Terraform formatting/validation, and Checkov scanning.
+
+The AWS deployment workflow uses GitHub OIDC (no long-lived AWS access keys), pushes an immutable commit-tagged image to ECR, runs Alembic migrations as a one-off ECS task, updates the ECS service, waits for stability, and checks the readiness endpoint. See [terraform/README.md](terraform/README.md) for required GitHub Environment variables.
+
 ## Security controls
 
-Current baseline:
-
-- Request validation with Pydantic.
-- Parameterized database access through SQLAlchemy.
-- Non-root Docker runtime user.
-- Automated test coverage gate.
-- Bandit static analysis.
-- Dependency vulnerability auditing with pip-audit.
-- GitHub Actions workflow with read-only repository permissions by default.
-
-Planned AWS controls:
-
-- Least-privilege IAM task and deployment roles.
-- GitHub OIDC federation instead of stored AWS access keys.
-- Private database subnets and security-group-restricted database access.
-- Secrets Manager for database credentials.
-- Encrypted storage and TLS at the application entry point.
-- Terraform security scanning and deployment review gates.
-
-## Repository layout
-
-```text
-app/                  FastAPI application, database, models, schemas, routes
-tests/                Automated API tests
-.github/workflows/    CI/CD workflows
-docs/                 Architecture and operational documentation
-terraform/            AWS infrastructure as code (being implemented)
-Dockerfile            Container image definition
-compose.yaml          Local container workflow
-```
+- Pydantic request validation and SQLAlchemy parameterized queries.
+- Non-root container user and read-only container root filesystem.
+- Separate liveness and database readiness endpoints.
+- PostgreSQL TLS required by the application connection.
+- RDS private subnets and security-group-limited database ingress.
+- Secrets Manager for the database password.
+- Separate ECS task and execution roles.
+- GitHub OIDC trust restricted to this repository and deployment branch.
+- CI test, dependency, static-analysis, image, and IaC scanning.
 
 ## Cost and safety
 
-Terraform creates billable cloud resources only when an operator explicitly runs `terraform apply`. Review the plan, region, estimated costs, and AWS account before applying. Do not commit credentials, Terraform state, or generated secret values.
+Terraform creates billable resources only when an operator explicitly runs `terraform apply`. An ALB, Fargate, RDS, logs, and secrets can incur recurring charges. Review the plan and current regional pricing before applying. Do not commit credentials or Terraform state. No live AWS deployment is claimed until it has been performed and verified.
 
-## Portfolio evidence
+## Repository structure
 
-Before presenting this as a completed AWS deployment, attach evidence of successful CI runs, Terraform validation/security scans, a deployed endpoint, container image publication, and operational logs. The project documentation will distinguish implemented, tested, and planned components honestly.
+```text
+app/                  FastAPI application
+tests/                Automated API and database configuration tests
+migrations/           Alembic schema migrations
+.github/workflows/    CI and AWS deployment workflows
+docs/                 Architecture documentation
+terraform/            AWS infrastructure as code
+Dockerfile            Non-root application image
+compose.yaml          Local container workflow
+```
