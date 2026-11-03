@@ -230,7 +230,6 @@ resource "random_password" "db" {
 resource "aws_db_instance" "app" {
   identifier              = "${local.name}-postgres"
   engine                  = "postgres"
-  engine_version          = "16"
   instance_class          = var.db_instance_class
   allocated_storage       = var.db_allocated_storage
   max_allocated_storage   = var.db_allocated_storage
@@ -322,6 +321,8 @@ resource "aws_ecs_task_definition" "app" {
     name      = "api"
     image     = "${aws_ecr_repository.app.repository_url}:bootstrap"
     essential = true
+    user      = "10001"
+    readonlyRootFilesystem = true
     portMappings = [{
       containerPort = var.container_port
       hostPort      = var.container_port
@@ -360,6 +361,12 @@ resource "aws_ecs_service" "app" {
   cluster         = aws_ecs_cluster.app.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.desired_count
+  health_check_grace_period_seconds = 120
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -448,7 +455,6 @@ resource "aws_iam_role_policy" "github_deploy" {
           "ecs:RegisterTaskDefinition",
           "ecs:RunTask",
           "ecs:UpdateService",
-          "ecs:Wait"
         ]
         Resource = "*"
       },
