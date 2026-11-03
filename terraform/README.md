@@ -32,7 +32,7 @@ The optional ACM certificate enables HTTPS. Without one, the ALB exposes HTTP fo
 
 ## GitHub Actions deployment configuration
 
-After Terraform has been applied, create a GitHub Environment named `aws-portfolio`. Add these environment variables:
+After Terraform has been applied, add these **repository-level Actions variables** under Settings → Secrets and variables → Actions → Variables:
 
 | Variable | Value |
 |---|---|
