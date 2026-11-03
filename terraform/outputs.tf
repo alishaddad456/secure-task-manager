@@ -57,3 +57,11 @@ output "database_endpoint" {
 output "ecr_repository_name" {
   value = aws_ecr_repository.app.name
 }
+
+output "cloudwatch_log_group_name" {
+  value = aws_cloudwatch_log_group.app.name
+}
+
+output "cloudwatch_dashboard_name" {
+  value = aws_cloudwatch_dashboard.app.dashboard_name
+}
