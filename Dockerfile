@@ -13,7 +13,7 @@ COPY app/ ./app/
 COPY migrations/ ./migrations/
 COPY alembic.ini .
 
-RUN useradd --create-home --uid 10001 appuser \\\n    && mkdir -p /data \\\n    && chown appuser:appuser /data
+RUN useradd --create-home --uid 10001 appuser && mkdir -p /data && chown appuser:appuser /data
 
 USER 10001:10001
 
