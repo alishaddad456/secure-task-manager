@@ -1,43 +1,43 @@
-
 import logging
-from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.database import Base, engine
-from app.models import Task
+from app.database import engine
 from app.routers.tasks import router as tasks_router
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(levelname)s: %(message)s",
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
-
 logger = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables initialized")
-    yield
-    logger.info("Application shutting down")
-
 
 app = FastAPI(
     title="Secure Task Manager API",
-    description="A learning project for secure API development.",
-    version="0.1.0",
+    description="A secure, containerized task API with an AWS DevSecOps delivery pipeline.",
+    version="1.0.0",
     debug=False,
-    lifespan=lifespan,
 )
 
 
 @app.get("/health", tags=["Health"])
 def health_check() -> dict[str, str]:
-    logger.info("Health check requested")
+    """Liveness probe: confirms that the API process is responding."""
     return {"status": "ok"}
 
 
-app.include_router(tasks_router)
+@app.get("/ready", tags=["Health"])
+def readiness_check(response: Response) -> dict[str, str]:
+    """Readiness probe: confirms that the application can reach its database."""
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        logger.exception("Database readiness check failed")
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "not_ready", "dependency": "database"}
+    return {"status": "ready"}
 
+
+app.include_router(tasks_router)
