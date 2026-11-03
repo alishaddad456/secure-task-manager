@@ -45,14 +45,13 @@ jobs:
         run: docker build -t secure-task-manager:test .
 
       - name: Scan container image with Trivy
-        uses: aquasecurity/trivy-action@0.31.0
-        with:
-          image-ref: secure-task-manager:test
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: CRITICAL
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$HOME/.cache/trivy:/root/.cache/" \
+            aquasec/trivy:0.58.2 image \
+            --exit-code 1 --ignore-unfixed --severity CRITICAL \
+            secure-task-manager:test
 
       - name: Test Docker runtime
         run: |
