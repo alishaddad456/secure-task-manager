@@ -10,6 +10,7 @@ Terraform provisions a portfolio environment containing:
 - ECS Fargate cluster, service, task definition, task/execution roles, and CloudWatch log group.
 - Private, encrypted, single-AZ RDS PostgreSQL instance.
 - Secrets Manager database password.
+- CloudWatch log group, ECS CPU/memory alarms, ALB 5xx alarm, RDS CPU alarm, and an operations dashboard.
 - GitHub Actions OIDC provider and branch-restricted deployment role.
 
 ## Network and cost trade-off
