@@ -1,0 +1,16 @@
+Database schema changes are managed with Alembic.
+
+Create a new migration after changing SQLAlchemy models:
+
+    alembic revision --autogenerate -m "describe change"
+
+Review the generated migration before applying it:
+
+    alembic upgrade head
+
+To roll back one revision:
+
+    alembic downgrade -1
+
+The application deliberately does not call SQLAlchemy create_all() at startup.
+Migrations are run as a controlled deployment step before the ECS service is updated.
