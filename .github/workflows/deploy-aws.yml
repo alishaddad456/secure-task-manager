@@ -2,14 +2,6 @@ name: Deploy Secure Task Manager to AWS
 
 on:
   workflow_dispatch:
-  push:
-    branches: [aws-infrastructure]
-    paths:
-      - "app/**"
-      - "migrations/**"
-      - "Dockerfile"
-      - "requirements.txt"
-      - ".github/workflows/deploy-aws.yml"
 
 permissions:
   contents: read
