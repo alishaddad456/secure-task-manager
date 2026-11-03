@@ -53,3 +53,7 @@ output "application_url" {
 output "database_endpoint" {
   value = aws_db_instance.app.address
 }
+
+output "ecr_repository_name" {
+  value = aws_ecr_repository.app.name
+}
