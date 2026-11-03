@@ -30,6 +30,7 @@ source .venv/bin/activate        # Windows: .venv\\Scripts\\activate
 python -m pip install -r requirements-dev.txt
 
 cp .env.example .env
+set -a && source .env && set +a
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
