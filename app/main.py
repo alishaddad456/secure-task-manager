@@ -1,11 +1,8 @@
-
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.database import Base, engine
-from app.models import Task
 from app.routers.tasks import router as tasks_router
 
 logging.basicConfig(
@@ -18,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database tables initialized")
+    logger.info("Application startup complete; database schema is managed by Alembic")
     yield
     logger.info("Application shutting down")
 
@@ -40,4 +36,3 @@ def health_check() -> dict[str, str]:
 
 
 app.include_router(tasks_router)
-
