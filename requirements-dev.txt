@@ -1,4 +1,6 @@
 -r requirements.txt
+pytest
+httpx
 pytest-cov
 bandit
 pip-audit
