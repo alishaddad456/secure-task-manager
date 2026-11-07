@@ -2,4 +2,3 @@
 pytest-cov
 bandit
 pip-audit
-httpx2
