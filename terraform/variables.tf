@@ -70,9 +70,9 @@ variable "app_memory" {
 }
 
 variable "desired_count" {
-  description = "Number of ECS tasks."
+  description = "Number of ECS tasks to start after the first image is deployed."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "github_repository" {
