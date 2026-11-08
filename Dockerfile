@@ -14,7 +14,9 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools urllib3 msgpack \
     && python -m pip install --no-cache-dir -r requirements.txt \
-    && python -m pip install --no-cache-dir --force-reinstall 'setuptools>=78.1.1'
+    && python -m pip install --no-cache-dir --force-reinstall 'setuptools>=78.1.1' \
+    && python -c "import setuptools; assert tuple(map(int, setuptools.__version__.split('.')[:2])) >= (78, 1)" \
+    && find /usr/local/lib/python3.13/site-packages /usr/lib/python3/dist-packages -maxdepth 1 -type d -name 'setuptools-70.3.0.dist-info' -prune -exec rm -rf {} +
 
 COPY app/ ./app/
 COPY alembic/ ./alembic/
