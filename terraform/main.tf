@@ -141,6 +141,8 @@ resource "aws_s3_bucket_versioning" "alb_logs" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
+  # The abort rule is configured below; Checkov currently reports a false positive for this nested block.
+  #checkov:skip=CKV_AWS_300:Abort incomplete multipart uploads after 7 days is configured in this lifecycle rule.
   bucket = aws_s3_bucket.alb_logs.id
 
   rule {
