@@ -358,7 +358,7 @@ resource "aws_ecr_repository" "app" {
 
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key          = aws_kms_key.security.arn
+    kms_key         = aws_kms_key.security.arn
   }
 }
 
@@ -407,33 +407,33 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
 }
 
 resource "aws_db_instance" "app" {
-  identifier                  = "${local.name}-postgres"
-  engine                      = "postgres"
-  engine_version              = "16"
-  instance_class              = var.db_instance_class
-  allocated_storage           = var.db_allocated_storage
-  max_allocated_storage       = var.db_allocated_storage
-  db_name                     = var.db_name
-  username                    = var.db_username
-  manage_master_user_password = true
+  identifier                           = "${local.name}-postgres"
+  engine                               = "postgres"
+  engine_version                       = "16"
+  instance_class                       = var.db_instance_class
+  allocated_storage                    = var.db_allocated_storage
+  max_allocated_storage                = var.db_allocated_storage
+  db_name                              = var.db_name
+  username                             = var.db_username
+  manage_master_user_password          = true
   iam_database_authentication_enabled = true
-  parameter_group_name        = aws_db_parameter_group.postgres.name
-  db_subnet_group_name        = aws_db_subnet_group.main.name
-  vpc_security_group_ids      = [aws_security_group.database.id]
-  publicly_accessible         = false
-  multi_az                    = false
-  storage_encrypted           = true
-  backup_retention_period     = 7
-  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
-  performance_insights_enabled = true
-  monitoring_interval         = 60
-  monitoring_role_arn         = aws_iam_role.rds_monitoring.arn
-  auto_minor_version_upgrade  = true
-  copy_tags_to_snapshot       = true
-  deletion_protection         = true
-  skip_final_snapshot         = false
-  final_snapshot_identifier   = "${local.name}-final"
-  apply_immediately           = true
+  parameter_group_name                 = aws_db_parameter_group.postgres.name
+  db_subnet_group_name                 = aws_db_subnet_group.main.name
+  vpc_security_group_ids               = [aws_security_group.database.id]
+  publicly_accessible                  = false
+  multi_az                             = false
+  storage_encrypted                    = true
+  backup_retention_period              = 7
+  enabled_cloudwatch_logs_exports      = ["postgresql", "upgrade"]
+  performance_insights_enabled         = true
+  monitoring_interval                  = 60
+  monitoring_role_arn                  = aws_iam_role.rds_monitoring.arn
+  auto_minor_version_upgrade           = true
+  copy_tags_to_snapshot                = true
+  deletion_protection                  = true
+  skip_final_snapshot                  = false
+  final_snapshot_identifier            = "${local.name}-final"
+  apply_immediately                    = true
 }
 
 resource "aws_cloudwatch_log_group" "app" {
@@ -617,8 +617,8 @@ resource "aws_iam_role_policy" "github_deploy" {
         Resource = "*"
       },
       {
-        Effect = "Allow"
-        Action = [
+        Effect   = "Allow"
+        Action   = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:CompleteLayerUpload",
           "ecr:InitiateLayerUpload",
@@ -628,29 +628,29 @@ resource "aws_iam_role_policy" "github_deploy" {
         Resource = aws_ecr_repository.app.arn
       },
       {
-        Effect = "Allow"
-        Action = ["ecs:DescribeClusters"]
+        Effect   = "Allow"
+        Action   = ["ecs:DescribeClusters"]
         Resource = aws_ecs_cluster.app.arn
       },
       {
-        Effect = "Allow"
-        Action = ["ecs:DescribeServices", "ecs:UpdateService"]
+        Effect   = "Allow"
+        Action   = ["ecs:DescribeServices", "ecs:UpdateService"]
         Resource = aws_ecs_service.app.id
       },
       {
-        Effect = "Allow"
-        Action = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition"]
+        Effect   = "Allow"
+        Action   = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition"]
         Resource = "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.name}:*"
       },
       {
-        Effect = "Allow"
-        Action = ["ecs:DescribeTasks"]
+        Effect   = "Allow"
+        Action   = ["ecs:DescribeTasks"]
         Resource = "*"
       },
       {
-        Effect = "Allow"
-        Action = ["ecs:RunTask"]
-        Resource = [
+        Effect    = "Allow"
+        Action    = ["ecs:RunTask"]
+        Resource  = [
           "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.name}:*",
           aws_ecs_cluster.app.arn
         ]
@@ -661,9 +661,9 @@ resource "aws_iam_role_policy" "github_deploy" {
         }
       },
       {
-        Effect   = "Allow"
-        Action   = ["iam:PassRole"]
-        Resource = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
+        Effect    = "Allow"
+        Action    = ["iam:PassRole"]
+        Resource  = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
         Condition = {
           StringEquals = {
             "iam:PassedToService" = "ecs-tasks.amazonaws.com"
