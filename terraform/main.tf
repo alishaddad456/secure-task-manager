@@ -1,11 +1,7 @@
 data "aws_caller_identity" "current" {}
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
 locals {
   name = "${var.project_name}-${var.environment}"
-  azs  = slice(data.aws_availability_zones.available.names, 0, 2)
+  azs  = var.availability_zones
 }
 
 resource "aws_vpc" "main" {
@@ -23,7 +19,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index + 1)
   availability_zone       = local.azs[count.index]
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
 }
 
 resource "aws_subnet" "private_db" {
@@ -77,10 +73,11 @@ resource "aws_security_group" "alb" {
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Forward application traffic to ECS tasks."
+    from_port       = var.container_port
+    to_port         = var.container_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app.id]
   }
 }
 
@@ -98,9 +95,18 @@ resource "aws_security_group" "app" {
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description     = "PostgreSQL access to the database security group."
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.database.id]
+  }
+
+  egress {
+    description = "HTTPS access to AWS APIs and image registry."
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -118,12 +124,7 @@ resource "aws_security_group" "database" {
     security_groups = [aws_security_group.app.id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  egress = []
 }
 
 resource "aws_lb" "app" {
@@ -133,6 +134,13 @@ resource "aws_lb" "app" {
   security_groups            = [aws_security_group.alb.id]
   subnets                    = aws_subnet.public[*].id
   drop_invalid_header_fields = true
+  enable_deletion_protection = true
+
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.id
+    prefix  = "alb"
+    enabled = true
+  }
 }
 
 resource "aws_lb_target_group" "app" {
@@ -203,7 +211,8 @@ resource "aws_ecr_repository" "app" {
   }
 
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key          = aws_kms_key.security.arn
   }
 }
 
@@ -232,12 +241,20 @@ resource "aws_db_instance" "app" {
   db_name                     = var.db_name
   username                    = var.db_username
   manage_master_user_password = true
+  iam_database_authentication_enabled = true
+  parameter_group_name        = aws_db_parameter_group.postgres.name
   db_subnet_group_name        = aws_db_subnet_group.main.name
   vpc_security_group_ids      = [aws_security_group.database.id]
   publicly_accessible         = false
   multi_az                    = false
   storage_encrypted           = true
-  backup_retention_period     = 1
+  backup_retention_period     = 7
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+  performance_insights_enabled = true
+  monitoring_interval         = 60
+  monitoring_role_arn         = aws_iam_role.rds_monitoring.arn
+  auto_minor_version_upgrade  = true
+  copy_tags_to_snapshot       = true
   deletion_protection         = true
   skip_final_snapshot         = false
   final_snapshot_identifier   = "${local.name}-final"
@@ -246,7 +263,8 @@ resource "aws_db_instance" "app" {
 
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${local.name}"
-  retention_in_days = 14
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.security.arn
 }
 
 resource "aws_iam_role" "ecs_execution" {
@@ -293,6 +311,11 @@ resource "aws_iam_role" "ecs_task" {
 
 resource "aws_ecs_cluster" "app" {
   name = local.name
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
