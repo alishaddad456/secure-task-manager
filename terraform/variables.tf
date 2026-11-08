@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region for the deployment."
   type        = string
-  default     = "eu-west-1"
+  default     = "eu-north-1"
 }
 
 variable "project_name" {
@@ -19,7 +19,7 @@ variable "environment" {
 variable "availability_zones" {
   description = "Two availability zones in the selected AWS region."
   type        = list(string)
-  default     = ["eu-west-1a", "eu-west-1b"]
+  default     = ["eu-north-1a", "eu-north-1b"]
 
   validation {
     condition     = length(var.availability_zones) == 2
