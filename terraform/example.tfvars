@@ -2,6 +2,7 @@
 aws_region        = "eu-west-1"
 project_name      = "secure-task-manager"
 environment       = "portfolio"
+availability_zones = ["eu-west-1a", "eu-west-1b"]
 github_repository = "alishaddad456/secure-task-manager"
 github_branch     = "phase-3-integration"
 
