@@ -73,7 +73,7 @@ variable "github_repository" {
 variable "github_branch" {
   description = "Only this Git ref may assume the GitHub deployment role."
   type        = string
-  default     = "aws-infrastructure"
+  default     = "phase-3-integration"
 }
 
 variable "acm_certificate_arn" {
