@@ -8,6 +8,7 @@ WORKDIR /app
 # Apply current Debian security updates and refresh vulnerable Python tooling.
 RUN apt-get update \
     && apt-get upgrade -y \
+    && apt-get purge -y python3-setuptools \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
