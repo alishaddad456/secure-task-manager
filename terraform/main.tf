@@ -132,6 +132,7 @@ resource "aws_lb" "app" {
   internal           = false
   security_groups    = [aws_security_group.alb.id]
   subnets            = aws_subnet.public[*].id
+  drop_invalid_header_fields = true
 }
 
 resource "aws_lb_target_group" "app" {
@@ -195,7 +196,7 @@ resource "aws_lb_listener" "https" {
 resource "aws_ecr_repository" "app" {
   name                 = local.name
   image_tag_mutability = "IMMUTABLE"
-  force_delete         = true
+  force_delete         = false
 
   image_scanning_configuration {
     scan_on_push = true
@@ -322,7 +323,7 @@ resource "aws_ecs_task_definition" "app" {
     ]
     secrets = [{
       name      = "DB_PASSWORD"
-      valueFrom = aws_db_instance.app.master_user_secret[0].secret_arn
+      valueFrom = "${aws_db_instance.app.master_user_secret[0].secret_arn}:password::"
     }]
     logConfiguration = {
       logDriver = "awslogs"
