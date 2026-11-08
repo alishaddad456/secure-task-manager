@@ -209,13 +209,7 @@ resource "aws_security_group" "alb" {
     }
   }
 
-  egress {
-    description     = "Forward application traffic to ECS tasks."
-    from_port       = var.container_port
-    to_port         = var.container_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app.id]
-  }
+  egress = []
 }
 
 resource "aws_security_group" "app" {
@@ -231,21 +225,7 @@ resource "aws_security_group" "app" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  egress {
-    description     = "PostgreSQL access to the database security group."
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.database.id]
-  }
-
-  egress {
-    description = "HTTPS access to AWS APIs and image registry."
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  egress = []
 }
 
 resource "aws_security_group" "database" {
@@ -264,6 +244,33 @@ resource "aws_security_group" "database" {
   egress = []
 }
 
+resource "aws_vpc_security_group_egress_rule" "alb_to_app" {
+  security_group_id            = aws_security_group.alb.id
+  referenced_security_group_id = aws_security_group.app.id
+  ip_protocol                  = "tcp"
+  from_port                    = var.container_port
+  to_port                      = var.container_port
+  description                  = "Forward application traffic to ECS tasks."
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_to_database" {
+  security_group_id            = aws_security_group.app.id
+  referenced_security_group_id = aws_security_group.database.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  description                  = "Allow PostgreSQL connections to RDS."
+}
+
+resource "aws_vpc_security_group_egress_rule" "app_https" {
+  security_group_id = aws_security_group.app.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol      = "tcp"
+  from_port        = 443
+  to_port          = 443
+  description      = "Allow HTTPS access to AWS APIs and image registry."
+}
+
 resource "aws_lb" "app" {
   name                       = substr("${local.name}-alb", 0, 32)
   load_balancer_type         = "application"
@@ -278,6 +285,8 @@ resource "aws_lb" "app" {
     prefix  = "alb"
     enabled = true
   }
+
+  depends_on = [aws_s3_bucket_policy.alb_logs]
 }
 
 resource "aws_lb_target_group" "app" {
