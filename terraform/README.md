@@ -21,6 +21,18 @@ To avoid a NAT Gateway's recurring cost, the initial learning environment runs F
 
 For a stricter production topology, move tasks to private subnets and add VPC endpoints or NAT egress as required. This has additional cost and is intentionally not provisioned by this starter configuration.
 
+## GitHub OIDC-only bootstrap (no application infrastructure)
+
+To create only the GitHub Actions OIDC provider and the branch-restricted deployment role before provisioning the application infrastructure, use the same Terraform working directory and state file that you will keep for the later full deployment:
+
+```bash
+terraform init
+terraform plan -target=aws_iam_openid_connect_provider.github -target=aws_iam_role.github_deploy
+terraform apply -target=aws_iam_openid_connect_provider.github -target=aws_iam_role.github_deploy
+```
+
+Review the plan first. It should create only the IAM OIDC provider and the GitHub deployment role (plus read-only data lookups). This does not create the VPC, ECS, ECR, RDS, load balancer, or other application infrastructure. The deployment role has no ECR/ECS deployment policy until the later full Terraform apply creates the infrastructure and its scoped policy. Preserve the Terraform state file and working directory for all later Terraform operations; do not commit state files or share them.
+
 ## Before applying
 
 1. Install Terraform >= 1.6 and configure AWS CLI credentials locally.
