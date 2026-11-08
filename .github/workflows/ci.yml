@@ -126,7 +126,7 @@ jobs:
           terraform_version: 1.9.8
 
       - name: Check Terraform formatting
-        run: terraform fmt -check -recursive terraform
+        run: terraform fmt -diff -check -recursive terraform
 
       - name: Initialize Terraform without a backend
         run: terraform -chdir=terraform init -backend=false -input=false
