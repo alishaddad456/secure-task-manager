@@ -5,8 +5,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Apply current Debian security updates and refresh vulnerable Python tooling.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools urllib3 msgpack \
+    && python -m pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
 COPY alembic/ ./alembic/
