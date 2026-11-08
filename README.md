@@ -93,4 +93,5 @@ This branch is the integration workspace for the AWS deployment. The application
 - `tests/` — API, database configuration, and health/readiness tests.
 - `terraform/` — AWS infrastructure and outputs.
 - `docs/architecture.md` — architecture and engineering decisions.
+- `docs/security-exceptions.md` — explicit Checkov exceptions and their production boundaries.
 - `.github/workflows/` — CI security gates and manual AWS deployment workflow.
