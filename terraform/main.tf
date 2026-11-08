@@ -222,11 +222,6 @@ resource "aws_ecr_lifecycle_policy" "app" {
   })
 }
 
-resource "random_password" "db" {
-  length           = 32
-  special          = false
-}
-
 resource "aws_db_instance" "app" {
   identifier              = "${local.name}-postgres"
   engine                  = "postgres"
@@ -235,26 +230,17 @@ resource "aws_db_instance" "app" {
   max_allocated_storage   = var.db_allocated_storage
   db_name                 = var.db_name
   username                = var.db_username
-  password                = random_password.db.result
+  manage_master_user_password = true
   db_subnet_group_name    = aws_db_subnet_group.main.name
   vpc_security_group_ids  = [aws_security_group.database.id]
   publicly_accessible     = false
   multi_az                = false
   storage_encrypted       = true
   backup_retention_period = 1
-  deletion_protection     = false
-  skip_final_snapshot     = true
+  deletion_protection     = true
+  skip_final_snapshot     = false
+  final_snapshot_identifier = "\${local.name}-final"
   apply_immediately       = true
-}
-
-resource "aws_secretsmanager_secret" "db_password" {
-  name                    = "${local.name}/database-password"
-  recovery_window_in_days = 7
-}
-
-resource "aws_secretsmanager_secret_version" "db_password" {
-  secret_id     = aws_secretsmanager_secret.db_password.id
-  secret_string = random_password.db.result
 }
 
 resource "aws_cloudwatch_log_group" "app" {
@@ -287,7 +273,7 @@ resource "aws_iam_role_policy" "ecs_secrets" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["secretsmanager:GetSecretValue"]
-      Resource = aws_secretsmanager_secret.db_password.arn
+      Resource = aws_db_instance.app.master_user_secret[0].secret_arn
     }]
   })
 }
@@ -336,7 +322,7 @@ resource "aws_ecs_task_definition" "app" {
     ]
     secrets = [{
       name      = "DB_PASSWORD"
-      valueFrom = aws_secretsmanager_secret.db_password.arn
+      valueFrom = aws_db_instance.app.master_user_secret[0].secret_arn
     }]
     logConfiguration = {
       logDriver = "awslogs"
@@ -462,6 +448,11 @@ resource "aws_iam_role_policy" "github_deploy" {
         Effect = "Allow"
         Action = ["iam:PassRole"]
         Resource = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
       }
     ]
   })
