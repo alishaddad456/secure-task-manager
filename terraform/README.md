@@ -2,15 +2,17 @@
 
 Terraform provisions a portfolio environment containing:
 
-- VPC with two public application/ALB subnets and two private database subnets.
-- Internet Gateway and public routing.
-- Security groups: internet to ALB; ALB to ECS; ECS to PostgreSQL only.
-- Application Load Balancer and health-checked target group.
+- VPC with two explicitly selected public application/ALB subnets and two private database subnets.
+- Internet Gateway, public routing, VPC Flow Logs, and a locked-down default security group.
+- Security groups with ALB-to-ECS, ECS-to-RDS, and HTTPS-only AWS API egress rules.
+- Public Application Load Balancer with invalid-header dropping, deletion protection, access logs, and a health-checked target group.
+- Private S3 ALB log bucket with public-access blocking, encryption, versioning, and 90-day lifecycle expiration.
+- Customer-managed KMS key for ECR and CloudWatch log encryption.
 - ECR repository with immutable tags, image scanning on push, and lifecycle cleanup.
 - ECS Fargate cluster, service, task definition, task/execution roles, and CloudWatch log group.
-- Private, encrypted, single-AZ RDS PostgreSQL instance.
-- Secrets Manager database password.
-- CloudWatch log group, ECS CPU/memory alarms, ALB 5xx alarm, RDS CPU alarm, and an operations dashboard.
+- Private, encrypted, single-AZ RDS PostgreSQL instance with IAM database authentication, forced TLS, PostgreSQL query logging, Performance Insights, and enhanced monitoring.
+- RDS-managed master password in Secrets Manager (not generated into Terraform state).
+- Encrypted CloudWatch log groups, ECS Container Insights, ECS CPU/memory alarms, ALB 5xx alarm, RDS CPU alarm, and an operations dashboard.
 - GitHub Actions OIDC provider and branch-restricted deployment role.
 
 ## Network and cost trade-off
@@ -29,7 +31,7 @@ For a stricter production topology, move tasks to private subnets and add VPC en
 
 RDS manages the database master password in Secrets Manager, so Terraform does not generate the password value. Terraform state still contains sensitive infrastructure metadata. Protect state with encryption and restricted access, and never commit state files. Configure a protected remote state backend before using this as a team environment.
 
-The optional ACM certificate enables HTTPS. Without one, the ALB exposes HTTP for a disposable demonstration only; do not send sensitive data over that endpoint.
+The optional ACM certificate enables HTTPS. Without one, the ALB exposes HTTP for a disposable demonstration only; do not send sensitive data over that endpoint. The explicit Checkov exceptions and their production boundaries are listed in `docs/security-exceptions.md`.
 
 ## GitHub Actions deployment configuration
 
@@ -48,12 +50,12 @@ After Terraform has been applied, add these **repository-level Actions variables
 | `ECS_SECURITY_GROUP_ID` | Terraform `ecs_security_group_id` output |
 | `APP_BASE_URL` | Terraform `application_url` output |
 
-The workflow uses GitHub OIDC and does not require stored AWS access keys. The OIDC trust policy is restricted to the `phase-3-integration` branch. Its IAM trust policy permits only the configured repository branch. The workflow builds an immutable commit-tagged image, runs Alembic migrations as a one-off Fargate task, updates ECS, waits for service stability, and checks `/ready`.
+The workflow uses GitHub OIDC and does not require stored AWS access keys. Its IAM trust policy permits only the configured repository and `phase-3-integration` branch. The workflow builds an immutable commit-tagged image, runs Alembic migrations as a one-off Fargate task, updates ECS, waits for service stability, and checks `/ready`.
 
 ## Bootstrap sequence
 
-The initial ECS task definition references a placeholder `bootstrap` image. Terraform creates the registry and service, but the service cannot become healthy until a real image is pushed. Run the deployment workflow after infrastructure creation and after adding the GitHub Environment variables.
+The initial ECS task definition references a placeholder `bootstrap` image. Terraform creates the registry and service, but the service cannot become healthy until a real image is pushed. Run the deployment workflow after infrastructure creation and after adding the repository-level Actions variables listed above.
 
 ## Cost and teardown
 
-This is not a zero-cost deployment. ALB and RDS may accrue charges while idle. Review current regional prices before applying. Destroy temporary resources with `terraform destroy` when finished; review RDS deletion and snapshot settings first.
+This is not a zero-cost deployment. ALB, RDS, the customer-managed KMS key, Performance Insights, enhanced monitoring, CloudWatch retention, and log storage may accrue charges while idle. Review current regional prices before applying. Destroy temporary resources with `terraform destroy` when finished; review RDS deletion and snapshot settings first.
