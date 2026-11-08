@@ -48,6 +48,13 @@ resource "aws_kms_key" "security" {
         Principal = { Service = "ecr.amazonaws.com" }
         Action    = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
         Resource  = "*"
+      },
+      {
+        Sid       = "AllowRDSPerformanceInsights"
+        Effect    = "Allow"
+        Principal = { Service = "rds.amazonaws.com" }
+        Action    = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
+        Resource  = "*"
       }
     ]
   })
@@ -122,6 +129,34 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    id     = "expire-old-alb-access-logs"
+    status = "Enabled"
+
+    filter {
+      prefix = "alb/"
+    }
+
+    expiration {
+      days = 90
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
     }
   }
 }
@@ -394,6 +429,12 @@ resource "aws_db_parameter_group" "postgres" {
     value        = "all"
     apply_method = "immediate"
   }
+
+  parameter {
+    name         = "rds.force_ssl"
+    value        = "1"
+    apply_method = "pending-reboot"
+  }
 }
 
 resource "aws_iam_role" "rds_monitoring" {
@@ -433,6 +474,7 @@ resource "aws_db_instance" "app" {
   backup_retention_period             = 7
   enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
   performance_insights_enabled        = true
+  performance_insights_kms_key_id     = aws_kms_key.security.arn
   monitoring_interval                 = 60
   monitoring_role_arn                 = aws_iam_role.rds_monitoring.arn
   auto_minor_version_upgrade          = true
