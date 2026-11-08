@@ -27,7 +27,7 @@ For a stricter production topology, move tasks to private subnets and add VPC en
 4. Run `terraform init`, `terraform fmt -check -recursive`, `terraform validate`, and `terraform plan`.
 5. Review every resource and cost before running `terraform apply`.
 
-Terraform state contains the generated database password and infrastructure metadata. Protect state as a secret, use encrypted storage with restricted access, and never commit it. Configure a protected remote state backend before using this as a team environment.
+RDS manages the database master password in Secrets Manager, so Terraform does not generate the password value. Terraform state still contains sensitive infrastructure metadata. Protect state with encryption and restricted access, and never commit state files. Configure a protected remote state backend before using this as a team environment.
 
 The optional ACM certificate enables HTTPS. Without one, the ALB exposes HTTP for a disposable demonstration only; do not send sensitive data over that endpoint.
 
@@ -48,7 +48,7 @@ After Terraform has been applied, add these **repository-level Actions variables
 | `ECS_SECURITY_GROUP_ID` | Terraform `ecs_security_group_id` output |
 | `APP_BASE_URL` | Terraform `application_url` output |
 
-The workflow uses GitHub OIDC and does not require stored AWS access keys. Its IAM trust policy permits only the configured repository branch. The workflow builds an immutable commit-tagged image, runs Alembic migrations as a one-off Fargate task, updates ECS, waits for service stability, and checks `/ready`.
+The workflow uses GitHub OIDC and does not require stored AWS access keys. The OIDC trust policy is restricted to the `phase-3-integration` branch. Its IAM trust policy permits only the configured repository branch. The workflow builds an immutable commit-tagged image, runs Alembic migrations as a one-off Fargate task, updates ECS, waits for service stability, and checks `/ready`.
 
 ## Bootstrap sequence
 
