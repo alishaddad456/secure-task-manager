@@ -20,24 +20,22 @@ Deliver a production-oriented learning deployment for a small FastAPI service wh
 | Registry | ECR | Native private registry for ECS images. |
 | Database | RDS PostgreSQL | Persistent managed database; container filesystems are ephemeral. |
 | Entry point | Application Load Balancer | Health-based routing and HTTPS termination. |
-| Secrets | Secrets Manager | Keep database credentials out of source code and image layers. |
+| Secrets | Secrets Manager | RDS-managed database credentials are injected into ECS tasks without storing the password as a Terraform-managed value. |
 | Observability | CloudWatch Logs and metrics | Centralized runtime troubleshooting. |
 | IaC | Terraform | Reproducible, reviewable infrastructure changes. |
 | CI/CD identity | GitHub OIDC | Short-lived AWS role sessions instead of long-lived access keys. |
 
 ## Network and cost trade-off
 
-The preferred production design places the database in private subnets and restricts its security group to the application tasks. The load balancer is public; application tasks should not accept unsolicited public ingress.
-
-A NAT Gateway can create significant recurring cost. The initial portfolio deployment should evaluate a no-NAT design (for example, tasks with public IPs in public subnets but ingress restricted to the load balancer security group) against a more isolated private-subnet design with VPC endpoints/NAT. The chosen topology must be explicit in Terraform and documented; do not silently trade away network controls.
+The current portfolio Terraform configuration places the public ALB and Fargate tasks in public subnets. Tasks receive public IPs to avoid a NAT Gateway's recurring cost, but their security group permits inbound application traffic only from the ALB security group. RDS remains private and accepts PostgreSQL only from the application security group. This is a cost-conscious demo trade-off, not the preferred production topology. Production should move tasks to private subnets and add NAT or required VPC endpoints.
 
 ## Database strategy
 
 - SQLite remains the default for local development and automated tests.
-- AWS runtime uses PostgreSQL through the `DATABASE_URL` environment variable.
-- The application already uses SQLAlchemy and selects SQLite-specific connection options only for SQLite URLs.
-- A PostgreSQL driver and versioned schema migrations will be added before production deployment.
-- Database schema changes should be performed by a controlled migration step, not by every application replica running `create_all` at startup.
+- AWS runtime uses PostgreSQL through the `DB_*` environment variables injected by ECS; an explicit `DATABASE_URL` takes precedence when supplied.
+- SQLAlchemy uses SQLite-specific connection options only for SQLite URLs and enables PostgreSQL TLS with `sslmode=require` for the AWS DB configuration.
+- PostgreSQL driver and Alembic versioned migrations are included in the application.
+- Database schema changes are run by the deployment workflow as a one-off ECS task before updating the service; the container entrypoint also applies migrations for simple local startup.
 
 ## Security principles
 
