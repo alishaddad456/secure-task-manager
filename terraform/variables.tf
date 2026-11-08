@@ -16,6 +16,17 @@ variable "environment" {
   default     = "portfolio"
 }
 
+variable "availability_zones" {
+  description = "Two availability zones in the selected AWS region."
+  type        = list(string)
+  default     = ["eu-west-1a", "eu-west-1b"]
+
+  validation {
+    condition     = length(var.availability_zones) == 2
+    error_message = "Exactly two availability zones must be supplied."
+  }
+}
+
 variable "container_port" {
   description = "Port exposed by the FastAPI container."
   type        = number
