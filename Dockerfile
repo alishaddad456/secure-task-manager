@@ -12,7 +12,8 @@ RUN apt-get update \
 
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools urllib3 msgpack \
-    && python -m pip install --no-cache-dir -r requirements.txt
+    && python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip install --no-cache-dir --force-reinstall 'setuptools>=78.1.1'
 
 COPY app/ ./app/
 COPY alembic/ ./alembic/
