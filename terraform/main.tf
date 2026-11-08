@@ -240,7 +240,7 @@ resource "aws_db_instance" "app" {
   backup_retention_period = 1
   deletion_protection     = true
   skip_final_snapshot     = false
-  final_snapshot_identifier = "\${local.name}-final"
+  final_snapshot_identifier = "${local.name}-final"
   apply_immediately       = true
 }
 
