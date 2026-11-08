@@ -13,7 +13,7 @@ COPY alembic/ ./alembic/
 COPY alembic.ini ./alembic.ini
 COPY entrypoint.sh ./entrypoint.sh
 
-RUN useradd --create-home appuser \
+RUN useradd --uid 10001 --create-home appuser \
     && mkdir -p /data \
     && chown -R appuser:appuser /app /data
 
