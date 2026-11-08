@@ -1,8 +1,8 @@
 # Copy to terraform.tfvars and adjust only after reviewing regional pricing.
-aws_region         = "eu-west-1"
+aws_region         = "eu-north-1"
 project_name       = "secure-task-manager"
 environment        = "portfolio"
-availability_zones = ["eu-west-1a", "eu-west-1b"]
+availability_zones = ["eu-north-1a", "eu-north-1b"]
 github_repository  = "alishaddad456/secure-task-manager"
 github_branch      = "phase-3-integration"
 
