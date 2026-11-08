@@ -603,10 +603,8 @@ resource "aws_iam_role_policy" "github_deploy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken"
-        ]
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
         Resource = "*"
       },
       {
@@ -622,17 +620,36 @@ resource "aws_iam_role_policy" "github_deploy" {
       },
       {
         Effect = "Allow"
-        Action = [
-          "ecs:DescribeClusters",
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:DescribeTasks",
-          "ecs:ListTasks",
-          "ecs:RegisterTaskDefinition",
-          "ecs:RunTask",
-          "ecs:UpdateService",
-        ]
+        Action = ["ecs:DescribeClusters"]
+        Resource = aws_ecs_cluster.app.arn
+      },
+      {
+        Effect = "Allow"
+        Action = ["ecs:DescribeServices", "ecs:UpdateService"]
+        Resource = aws_ecs_service.app.id
+      },
+      {
+        Effect = "Allow"
+        Action = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition"]
+        Resource = "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.name}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["ecs:DescribeTasks"]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["ecs:RunTask"]
+        Resource = [
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.name}:*",
+          aws_ecs_cluster.app.arn
+        ]
+        Condition = {
+          ArnEquals = {
+            "ecs:cluster" = aws_ecs_cluster.app.arn
+          }
+        }
       },
       {
         Effect   = "Allow"
