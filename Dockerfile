@@ -1,29 +1,25 @@
-FROM python:3.13-slim
+FROM python:3.13-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Apply current Debian security updates and refresh vulnerable Python tooling.
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get purge -y python3-setuptools \
-    && rm -rf /var/lib/apt/lists/*
+# Keep Alpine packages current and install patched Python tooling.
+RUN apk upgrade --no-cache
 
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools urllib3 msgpack \
     && python -m pip install --no-cache-dir -r requirements.txt \
     && python -m pip install --no-cache-dir --force-reinstall 'setuptools>=78.1.1' \
-    && python -c "import setuptools; assert tuple(map(int, setuptools.__version__.split('.')[:2])) >= (78, 1)" \
-    && find /usr/local/lib/python3.13/site-packages -maxdepth 1 -type d -name 'setuptools-70.3.0.dist-info' -prune -exec rm -rf {} +
+    && python -c "import setuptools; assert tuple(map(int, setuptools.__version__.split('.')[:2])) >= (78, 1)"
 
 COPY app/ ./app/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./alembic.ini
 COPY entrypoint.sh ./entrypoint.sh
 
-RUN useradd --uid 10001 --create-home appuser \
+RUN adduser -D -u 10001 appuser \
     && mkdir -p /data \
     && chown -R appuser:appuser /app /data
 
