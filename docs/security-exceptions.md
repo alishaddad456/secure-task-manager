@@ -13,5 +13,6 @@ The Terraform CI job runs Checkov as a blocking gate. The following controls are
 | CKV_AWS_144 | No cross-region replication for ALB logs | The portfolio environment is single-region and the log bucket is not a disaster-recovery archive. Enable replication for regulated or production workloads. |
 | CKV_AWS_145 | ALB log bucket uses SSE-S3 rather than SSE-KMS | ALB access-log delivery requires the supported S3-managed encryption configuration; the bucket is private and public access is blocked. |
 | CKV2_AWS_62 | No S3 event notifications on the ALB log bucket | There is no downstream event consumer in this project. Notifications would add an unused service integration. |
+| CKV_AWS_300 | Checkov false positive for multipart-upload abort | The `aws_s3_bucket_lifecycle_configuration.alb_logs` rule explicitly aborts incomplete multipart uploads after 7 days. The inline skip is scoped to this resource; retain the lifecycle block and recheck when upgrading Checkov. |
 
 All other Checkov findings remain blocking and must be fixed. Revisit these exceptions before any production use.
