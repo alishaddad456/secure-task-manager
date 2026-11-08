@@ -265,10 +265,10 @@ resource "aws_vpc_security_group_egress_rule" "app_to_database" {
 resource "aws_vpc_security_group_egress_rule" "app_https" {
   security_group_id = aws_security_group.app.id
   cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol      = "tcp"
-  from_port        = 443
-  to_port          = 443
-  description      = "Allow HTTPS access to AWS APIs and image registry."
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  description       = "Allow HTTPS access to AWS APIs and image registry."
 }
 
 resource "aws_lb" "app" {
@@ -407,33 +407,33 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
 }
 
 resource "aws_db_instance" "app" {
-  identifier                           = "${local.name}-postgres"
-  engine                               = "postgres"
-  engine_version                       = "16"
-  instance_class                       = var.db_instance_class
-  allocated_storage                    = var.db_allocated_storage
-  max_allocated_storage                = var.db_allocated_storage
-  db_name                              = var.db_name
-  username                             = var.db_username
-  manage_master_user_password          = true
+  identifier                          = "${local.name}-postgres"
+  engine                              = "postgres"
+  engine_version                      = "16"
+  instance_class                      = var.db_instance_class
+  allocated_storage                   = var.db_allocated_storage
+  max_allocated_storage               = var.db_allocated_storage
+  db_name                             = var.db_name
+  username                            = var.db_username
+  manage_master_user_password         = true
   iam_database_authentication_enabled = true
-  parameter_group_name                 = aws_db_parameter_group.postgres.name
-  db_subnet_group_name                 = aws_db_subnet_group.main.name
-  vpc_security_group_ids               = [aws_security_group.database.id]
-  publicly_accessible                  = false
-  multi_az                             = false
-  storage_encrypted                    = true
-  backup_retention_period              = 7
-  enabled_cloudwatch_logs_exports      = ["postgresql", "upgrade"]
-  performance_insights_enabled         = true
-  monitoring_interval                  = 60
-  monitoring_role_arn                  = aws_iam_role.rds_monitoring.arn
-  auto_minor_version_upgrade           = true
-  copy_tags_to_snapshot                = true
-  deletion_protection                  = true
-  skip_final_snapshot                  = false
-  final_snapshot_identifier            = "${local.name}-final"
-  apply_immediately                    = true
+  parameter_group_name                = aws_db_parameter_group.postgres.name
+  db_subnet_group_name                = aws_db_subnet_group.main.name
+  vpc_security_group_ids              = [aws_security_group.database.id]
+  publicly_accessible                 = false
+  multi_az                            = false
+  storage_encrypted                   = true
+  backup_retention_period             = 7
+  enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
+  performance_insights_enabled        = true
+  monitoring_interval                 = 60
+  monitoring_role_arn                 = aws_iam_role.rds_monitoring.arn
+  auto_minor_version_upgrade          = true
+  copy_tags_to_snapshot               = true
+  deletion_protection                 = true
+  skip_final_snapshot                 = false
+  final_snapshot_identifier           = "${local.name}-final"
+  apply_immediately                   = true
 }
 
 resource "aws_cloudwatch_log_group" "app" {
@@ -617,8 +617,8 @@ resource "aws_iam_role_policy" "github_deploy" {
         Resource = "*"
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:CompleteLayerUpload",
           "ecr:InitiateLayerUpload",
@@ -648,9 +648,9 @@ resource "aws_iam_role_policy" "github_deploy" {
         Resource = "*"
       },
       {
-        Effect    = "Allow"
-        Action    = ["ecs:RunTask"]
-        Resource  = [
+        Effect = "Allow"
+        Action = ["ecs:RunTask"]
+        Resource = [
           "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.name}:*",
           aws_ecs_cluster.app.arn
         ]
@@ -661,9 +661,9 @@ resource "aws_iam_role_policy" "github_deploy" {
         }
       },
       {
-        Effect    = "Allow"
-        Action    = ["iam:PassRole"]
-        Resource  = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
         Condition = {
           StringEquals = {
             "iam:PassedToService" = "ecs-tasks.amazonaws.com"
