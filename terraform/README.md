@@ -54,7 +54,7 @@ The workflow uses GitHub OIDC and does not require stored AWS access keys. Its I
 
 ## Bootstrap sequence
 
-The initial ECS task definition references a placeholder `bootstrap` image. Terraform creates the registry and service, but the service cannot become healthy until a real image is pushed. Run the deployment workflow after infrastructure creation and after adding the repository-level Actions variables listed above.
+The initial ECS task definition references a placeholder `bootstrap` image. The ECS service defaults to `desired_count = 0`, so Terraform can create infrastructure without launching a task from a nonexistent image. After infrastructure creation and adding the repository-level Actions variables, run the deployment workflow; it builds and pushes a real image, registers a new task definition, and scales the service to one task.
 
 ## Cost and teardown
 
