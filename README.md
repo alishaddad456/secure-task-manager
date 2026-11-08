@@ -63,10 +63,10 @@ The GitHub Actions workflow runs:
 1. PostgreSQL-backed Alembic migration and pytest suite with an 85% coverage threshold.
 2. Bandit static security analysis.
 3. pip-audit dependency vulnerability audit.
-4. Semgrep static analysis.
+4. Semgrep static analysis and Gitleaks repository secret scanning.
 5. Docker image build and Trivy HIGH/CRITICAL vulnerability scan.
 6. Container runtime smoke tests, including readiness and task creation.
-7. Terraform formatting, initialization, validation, and Checkov scanning.
+7. Terraform formatting, initialization, validation, and blocking Checkov scanning with documented exceptions.
 
 AWS deployment is manual via `.github/workflows/deploy-aws.yml`. It authenticates with GitHub OIDC, pushes an immutable commit-SHA image to ECR, runs database migrations as a one-off ECS task, deploys a new ECS task definition, waits for service stability, and verifies `/ready`. No long-lived AWS access keys are required.
 
