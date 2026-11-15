@@ -223,8 +223,8 @@ resource "aws_ecr_lifecycle_policy" "app" {
 }
 
 resource "random_password" "db" {
-  length           = 32
-  special          = false
+  length  = 32
+  special = false
 }
 
 resource "aws_db_instance" "app" {
@@ -267,9 +267,9 @@ resource "aws_iam_role" "ecs_execution" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -297,9 +297,9 @@ resource "aws_iam_role" "ecs_task" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -318,10 +318,10 @@ resource "aws_ecs_task_definition" "app" {
   task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
-    name      = "api"
-    image     = "${aws_ecr_repository.app.repository_url}:bootstrap"
-    essential = true
-    user      = "10001"
+    name                   = "api"
+    image                  = "${aws_ecr_repository.app.repository_url}:bootstrap"
+    essential              = true
+    user                   = "10001"
     readonlyRootFilesystem = true
     portMappings = [{
       containerPort = var.container_port
@@ -357,17 +357,17 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
-  name            = local.name
-  cluster         = aws_ecs_cluster.app.id
-  task_definition = aws_ecs_task_definition.app.arn
-  desired_count   = var.desired_count
+  name                              = local.name
+  cluster                           = aws_ecs_cluster.app.id
+  task_definition                   = aws_ecs_task_definition.app.arn
+  desired_count                     = var.desired_count
   health_check_grace_period_seconds = 120
 
   deployment_circuit_breaker {
     enable   = true
     rollback = true
   }
-  launch_type     = "FARGATE"
+  launch_type = "FARGATE"
 
   network_configuration {
     subnets          = aws_subnet.public[*].id
@@ -407,9 +407,9 @@ resource "aws_iam_role" "github_deploy" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
-      Action = "sts:AssumeRoleWithWebIdentity"
+      Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
@@ -459,8 +459,8 @@ resource "aws_iam_role_policy" "github_deploy" {
         Resource = "*"
       },
       {
-        Effect = "Allow"
-        Action = ["iam:PassRole"]
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
         Resource = [aws_iam_role.ecs_execution.arn, aws_iam_role.ecs_task.arn]
       }
     ]

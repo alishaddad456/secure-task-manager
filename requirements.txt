@@ -4,5 +4,3 @@ sqlalchemy
 pydantic
 psycopg[binary]>=3.2,<4
 alembic>=1.14,<2
-pytest
-httpx

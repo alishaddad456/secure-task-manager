@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -10,11 +12,15 @@ from app.main import app
 
 @pytest.fixture
 def client():
-    test_engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    test_database_url = os.getenv("TEST_DATABASE_URL")
+    if test_database_url:
+        test_engine = create_engine(test_database_url, pool_pre_ping=True)
+    else:
+        test_engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
 
     TestingSessionLocal = sessionmaker(
         bind=test_engine,
