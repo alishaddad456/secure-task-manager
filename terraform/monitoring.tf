@@ -1,3 +1,12 @@
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/ecs/${local.name}"
+  retention_in_days = 7
+  kms_key_id        = aws_kms_key.security.arn
+
+  tags = {
+    Name = "${local.name}-logs"
+  }
+}
 resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   alarm_name          = "${local.name}-ecs-cpu-high"
   alarm_description   = "ECS service average CPU utilization is above 80%."

@@ -26,3 +26,24 @@ crash.log
 .vscode/
 .idea/
 .DS_Store
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!example.tfvars
+checkov-*.json
+
+# Terraform generated plans and local backups
+/terraform/tfplan
+/terraform/tfplan.json
+/terraform/*.tfplan
+/terraform/*.tfplan.json
+/terraform/*.bak
+/terraform/*.backup-*
+/terraform/terraform.tfvars*
+/terraform/checkov-phase4.txt
+terraform.tfstate
+terraform.tfstate.backup
+tfplan-review.txt
