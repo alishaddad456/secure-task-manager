@@ -70,7 +70,7 @@ def update_task(
     changes = task_data.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Provide at least one field to update",
         )
 

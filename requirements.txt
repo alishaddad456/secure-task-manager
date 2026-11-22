@@ -2,5 +2,5 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 pydantic
-alembic
-psycopg[binary]
+psycopg[binary]>=3.2,<4
+alembic>=1.14,<2
