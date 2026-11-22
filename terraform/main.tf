@@ -629,6 +629,7 @@ resource "aws_iam_role_policy" "github_deploy" {
         Effect = "Allow"
         Action = [
           "ecr:BatchCheckLayerAvailability",
+          "ecr:BatchGetImage",
           "ecr:CompleteLayerUpload",
           "ecr:InitiateLayerUpload",
           "ecr:PutImage",
@@ -644,11 +645,11 @@ resource "aws_iam_role_policy" "github_deploy" {
         Resource = "*"
       },
 
-      # Register task definitions for this family only
+      # RegisterTaskDefinition does not support resource-level permissions
       {
         Effect   = "Allow"
         Action   = ["ecs:RegisterTaskDefinition"]
-        Resource = "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.name}:*"
+        Resource = "*"
       },
 
       # Run migration tasks on this cluster only
