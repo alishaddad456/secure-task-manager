@@ -94,3 +94,10 @@ variable "db_max_allocated_storage" {
   type        = number
   default     = 30
 }
+
+variable "alarm_email" {
+  description = "Email address that receives CloudWatch alarm notifications. Set it in the untracked terraform.tfvars file; never commit it."
+  type        = string
+  default     = null
+  nullable    = true
+}

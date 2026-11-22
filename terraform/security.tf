@@ -30,6 +30,18 @@ resource "aws_kms_key" "security" {
         Principal = { Service = "ecr.amazonaws.com" }
         Action    = ["kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:DescribeKey"]
         Resource  = "*"
+      },
+      {
+        Sid       = "AllowCloudWatchAlarmsToPublish"
+        Effect    = "Allow"
+        Principal = { Service = "cloudwatch.amazonaws.com" }
+        Action    = ["kms:Decrypt", "kms:GenerateDataKey*"]
+        Resource  = "*"
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       }
     ]
   })

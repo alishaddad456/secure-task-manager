@@ -1,6 +1,6 @@
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${local.name}"
-  retention_in_days = 7
+  retention_in_days = 365
   kms_key_id        = aws_kms_key.security.arn
 
   tags = {
@@ -18,6 +18,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   threshold           = 80
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  ok_actions          = [aws_sns_topic.alerts.arn]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.app.name
@@ -36,6 +38,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
   threshold           = 80
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  ok_actions          = [aws_sns_topic.alerts.arn]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.app.name
@@ -54,6 +58,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   threshold           = 5
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  ok_actions          = [aws_sns_topic.alerts.arn]
 
   dimensions = {
     LoadBalancer = aws_lb.app.arn_suffix
@@ -71,6 +77,8 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
   threshold           = 80
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  ok_actions          = [aws_sns_topic.alerts.arn]
 
   dimensions = {
     DBInstanceIdentifier = aws_db_instance.app.identifier
