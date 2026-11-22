@@ -13,9 +13,17 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def database_url_string() -> str:
+    """Return a connectable URL; str(URL) would mask the password as ***."""
+    url = build_database_url()
+    if isinstance(url, str):
+        return url
+    return url.render_as_string(hide_password=False)
+
+
 def run_migrations_offline() -> None:
     context.configure(
-        url=str(build_database_url()),
+        url=database_url_string(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -27,7 +35,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section) or {}
-    configuration["sqlalchemy.url"] = str(build_database_url())
+    configuration["sqlalchemy.url"] = database_url_string()
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

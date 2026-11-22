@@ -82,3 +82,9 @@ variable "acm_certificate_arn" {
   default     = null
   nullable    = true
 }
+
+variable "github_oidc_subject_prefix" {
+  description = "Immutable GitHub OIDC subject prefix for this repository (from the repo OIDC customization API)."
+  type        = string
+  default     = "repo:alishaddad456@265635248/secure-task-manager@1428923387"
+}

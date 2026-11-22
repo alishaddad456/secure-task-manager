@@ -558,9 +558,21 @@ resource "aws_ecs_service" "app" {
 
 # --------------------------------------------------
 # GITHUB ACTIONS OIDC DEPLOYMENT ROLE
-# REUSES EXISTING AWS OIDC PROVIDER
+# MANAGES THE GITHUB OIDC PROVIDER
 # --------------------------------------------------
+# GitHub Actions OIDC Provider
+resource "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
 
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  tags = {
+    Name    = "${local.name}-github-oidc"
+    Project = "secure-task-manager"
+  }
+}
 resource "aws_iam_role" "github_deploy" {
   name = "${local.name}-github-deploy"
 
@@ -571,7 +583,7 @@ resource "aws_iam_role" "github_deploy" {
       Effect = "Allow"
 
       Principal = {
-        Federated = "arn:aws:iam::040331609263:oidc-provider/token.actions.githubusercontent.com"
+        Federated = aws_iam_openid_connect_provider.github.arn
       }
 
       Action = "sts:AssumeRoleWithWebIdentity"
@@ -580,7 +592,7 @@ resource "aws_iam_role" "github_deploy" {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
 
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
+          "token.actions.githubusercontent.com:sub" = "${var.github_oidc_subject_prefix}:ref:refs/heads/${var.github_branch}"
         }
       }
     }]
