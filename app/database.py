@@ -29,6 +29,18 @@ def build_database_url() -> str | URL:
     return f"sqlite:///{BASE_DIR / 'tasks.db'}"
 
 
+def render_database_url() -> str:
+    """Return the database URL as a connectable string.
+
+    str(URL) masks the password as ***, so tools that need a string
+    (such as Alembic) must use this instead.
+    """
+    url = build_database_url()
+    if isinstance(url, str):
+        return url
+    return url.render_as_string(hide_password=False)
+
+
 DATABASE_URL = build_database_url()
 is_sqlite = str(DATABASE_URL).startswith("sqlite")
 connect_args = {"check_same_thread": False} if is_sqlite else {}
