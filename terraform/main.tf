@@ -341,7 +341,7 @@ resource "aws_db_instance" "app" {
 
   storage_encrypted = true
 
-  backup_retention_period    = 7
+  backup_retention_period    = 1
   copy_tags_to_snapshot      = true
   auto_minor_version_upgrade = true
 
