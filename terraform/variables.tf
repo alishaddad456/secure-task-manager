@@ -88,3 +88,9 @@ variable "github_oidc_subject_prefix" {
   type        = string
   default     = "repo:alishaddad456@265635248/secure-task-manager@1428923387"
 }
+
+variable "db_max_allocated_storage" {
+  description = "Upper limit in GiB for RDS storage autoscaling. Must be >= db_allocated_storage."
+  type        = number
+  default     = 30
+}

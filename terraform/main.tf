@@ -113,11 +113,11 @@ resource "aws_security_group" "alb" {
   }
 
   egress {
-    description = "Allow outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "Forward traffic to application tasks only"
+    from_port   = var.container_port
+    to_port     = var.container_port
+    protocol    = "tcp"
+    cidr_blocks = aws_subnet.public[*].cidr_block
   }
 
   tags = {
@@ -139,10 +139,18 @@ resource "aws_security_group" "app" {
   }
 
   egress {
-    description = "Outbound access for database and AWS services"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "PostgreSQL to the database subnets"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = aws_subnet.private_db[*].cidr_block
+  }
+
+  egress {
+    description = "HTTPS to AWS APIs (ECR, S3, Secrets Manager, CloudWatch Logs)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -181,6 +189,7 @@ resource "aws_lb" "app" {
   subnets            = aws_subnet.public[*].id
 
   enable_deletion_protection = true
+  drop_invalid_header_fields = true
 
   tags = {
     Name = "${local.name}-alb"
@@ -318,7 +327,7 @@ resource "aws_db_instance" "app" {
   engine                = "postgres"
   instance_class        = var.db_instance_class
   allocated_storage     = var.db_allocated_storage
-  max_allocated_storage = var.db_allocated_storage
+  max_allocated_storage = var.db_max_allocated_storage
 
   db_name  = var.db_name
   username = var.db_username
@@ -332,8 +341,9 @@ resource "aws_db_instance" "app" {
 
   storage_encrypted = true
 
-  backup_retention_period = 1
-  copy_tags_to_snapshot   = true
+  backup_retention_period    = 7
+  copy_tags_to_snapshot      = true
+  auto_minor_version_upgrade = true
 
   deletion_protection       = true
   skip_final_snapshot       = false
