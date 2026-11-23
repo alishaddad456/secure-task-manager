@@ -341,9 +341,10 @@ resource "aws_db_instance" "app" {
 
   storage_encrypted = true
 
-  backup_retention_period    = 1
-  copy_tags_to_snapshot      = true
-  auto_minor_version_upgrade = true
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+  backup_retention_period         = 1
+  copy_tags_to_snapshot           = true
+  auto_minor_version_upgrade      = true
 
   deletion_protection       = true
   skip_final_snapshot       = false
@@ -363,6 +364,7 @@ resource "aws_db_instance" "app" {
 resource "aws_secretsmanager_secret" "db_password" {
   name                    = "${local.name}/database-password"
   recovery_window_in_days = 7
+  kms_key_id              = aws_kms_key.security.arn
 
   tags = {
     Name = "${local.name}-database-password"
@@ -408,11 +410,23 @@ resource "aws_iam_role_policy" "ecs_secrets" {
   policy = jsonencode({
     Version = "2012-10-17"
 
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
-      Resource = aws_secretsmanager_secret.db_password.arn
-    }]
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.db_password.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = aws_kms_key.security.arn
+        Condition = {
+          StringEquals = {
+            "kms:ViaService" = "secretsmanager.${var.aws_region}.amazonaws.com"
+          }
+        }
+      }
+    ]
   })
 }
 
@@ -440,6 +454,11 @@ resource "aws_iam_role" "ecs_task" {
 
 resource "aws_ecs_cluster" "app" {
   name = local.name
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 
   tags = {
     Name = "${local.name}-cluster"

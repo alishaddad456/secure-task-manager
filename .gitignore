@@ -47,3 +47,7 @@ checkov-*.json
 terraform.tfstate
 terraform.tfstate.backup
 tfplan-review.txt
+/backups/
+/terraform/backups/
+/checkov-phase4*.txt
+/REPO_STATUS.txt

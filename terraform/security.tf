@@ -21,6 +21,7 @@ resource "aws_kms_key" "security" {
         Condition = {
           ArnLike = {
             "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+
           }
         }
       },
