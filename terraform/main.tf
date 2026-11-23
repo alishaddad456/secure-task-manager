@@ -265,9 +265,9 @@ resource "aws_lb" "app" {
   }
 
   tags = {
-    Name       = "${local.name}-alb"
-    depends_on = [aws_s3_bucket_policy.alb_logs]
+    Name = "${local.name}-alb"
   }
+  depends_on = [aws_s3_bucket_policy.alb_logs]
 }
 
 resource "aws_lb_target_group" "app" {
@@ -349,8 +349,7 @@ resource "aws_ecr_repository" "app" {
   }
 
   encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = aws_kms_key.security.arn
+    encryption_type = "AES256"
   }
 
   tags = {
@@ -413,17 +412,14 @@ resource "aws_db_instance" "app" {
   parameter_group_name   = aws_db_parameter_group.app.name
 
   publicly_accessible = false
-  multi_az            = true
+  multi_az            = false
 
   storage_encrypted = true
 
-  iam_database_authentication_enabled = true
+  iam_database_authentication_enabled = false
 
-  performance_insights_enabled          = true
-  performance_insights_retention_period = 7
 
-  monitoring_interval = 30
-  monitoring_role_arn = aws_iam_role.rds_enhanced_monitoring.arn
+  monitoring_interval = 0
 
   enabled_cloudwatch_logs_exports = ["postgresql"]
   backup_retention_period         = 1
