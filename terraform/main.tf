@@ -1,13 +1,10 @@
 
 data "aws_caller_identity" "current" {}
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
 locals {
   name = "${var.project_name}-${var.environment}"
-  azs  = slice(data.aws_availability_zones.available.names, 0, 2)
+  # Availability Zones are pinned via var.azs to avoid drift; see variables.tf.
+  azs = var.azs
 }
 
 # --------------------------------------------------
@@ -80,6 +77,76 @@ resource "aws_db_subnet_group" "main" {
 
   tags = {
     Name = "${local.name}-db-subnet-group"
+  }
+}
+
+# --------------------------------------------------
+# VPC FLOW LOGS
+# --------------------------------------------------
+
+resource "aws_cloudwatch_log_group" "vpc_flow" {
+  name              = "/vpc/${local.name}"
+  retention_in_days = 7
+  kms_key_id        = aws_kms_key.security.arn
+
+  tags = {
+    Name = "${local.name}-vpc-flow-logs"
+  }
+}
+
+resource "aws_iam_role" "vpc_flow_log" {
+  name = "${local.name}-vpc-flow-log"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [{
+      Effect = "Allow"
+
+      Principal = {
+        Service = "vpc-flow-logs.amazonaws.com"
+      }
+
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "vpc_flow_log" {
+  name = "publish-flow-logs"
+  role = aws_iam_role.vpc_flow_log.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "${aws_cloudwatch_log_group.vpc_flow.arn}:*"
+      },
+      {
+        # Flow Logs requires a one-time describe to confirm the destination exists.
+        Effect   = "Allow"
+        Action   = ["logs:DescribeLogGroups"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_flow_log" "vpc" {
+  vpc_id               = aws_vpc.main.id
+  iam_role_arn         = aws_iam_role.vpc_flow_log.arn
+  log_destination      = aws_cloudwatch_log_group.vpc_flow.arn
+  log_destination_type = "cloud-watch-logs"
+  traffic_type         = "ALL"
+
+  tags = {
+    Name = "${local.name}-vpc-flow-log"
   }
 }
 

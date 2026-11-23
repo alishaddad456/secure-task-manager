@@ -51,3 +51,9 @@ tfplan-review.txt
 /terraform/backups/
 /checkov-phase4*.txt
 /REPO_STATUS.txt
+
+# Phase 4 ephemeral artifacts
+tfplan-task*
+checkov-phase4-final.*
+phase4-security-groups.json
+ec2 describe-flow-logs 

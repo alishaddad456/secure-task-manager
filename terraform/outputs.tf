@@ -62,6 +62,10 @@ output "cloudwatch_log_group_name" {
   value = aws_cloudwatch_log_group.app.name
 }
 
+output "vpc_flow_log_group_name" {
+  value = aws_cloudwatch_log_group.vpc_flow.name
+}
+
 output "cloudwatch_dashboard_name" {
   value = aws_cloudwatch_dashboard.app.dashboard_name
 }

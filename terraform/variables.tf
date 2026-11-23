@@ -1,3 +1,9 @@
+variable "azs" {
+  description = "Availability Zones explicitly pinned for the VPC subnets. Pinning prevents silent drift if AWS adds or reorders AZs in the region. Defaults match the first two AZs returned by eu-north-1, which is what the previous data source selected."
+  type        = list(string)
+  default     = ["eu-north-1a", "eu-north-1b"]
+}
+
 variable "aws_region" {
   description = "AWS region for the deployment."
   type        = string
