@@ -1,0 +1,14 @@
+diff --git a/terraform/main.tf b/terraform/main.tf
+index 104db35..9e0ed9c 100644
+--- a/terraform/main.tf
++++ b/terraform/main.tf
+@@ -352,7 +352,8 @@ resource "aws_ecr_repository" "app" {
+   }
+ 
+   encryption_configuration {
+-    encryption_type = "AES256"
++    encryption_type = "KMS"
++    kms_key         = aws_kms_key.security.arn
+   }
+ 
+   tags = {
