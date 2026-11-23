@@ -1,0 +1,44 @@
+diff --git a/terraform/main.tf b/terraform/main.tf
+index fc0693b..104db35 100644
+--- a/terraform/main.tf
++++ b/terraform/main.tf
+@@ -412,6 +412,7 @@ resource "aws_db_instance" "app" {
+ 
+   db_subnet_group_name   = aws_db_subnet_group.main.name
+   vpc_security_group_ids = [aws_security_group.database.id]
++  parameter_group_name   = aws_db_parameter_group.app.name
+ 
+   publicly_accessible = false
+   multi_az            = true
+diff --git a/terraform/pg_logging.tf b/terraform/pg_logging.tf
+new file mode 100644
+index 0000000..e9594db
+--- /dev/null
++++ b/terraform/pg_logging.tf
+@@ -0,0 +1,26 @@
++# --------------------------------------------------
++# POSTGRESQL QUERY LOGGING (RDS hardening)
++# --------------------------------------------------
++# Slow-query logging: statements taking longer than 1 second. The postgresql
++# log stream is already exported to CloudWatch by enabled_cloudwatch_logs_exports
++# on the DB instance, so these entries land in /ecs-adjacent log group automatically.
++# For full statement logging instead, add: log_statement = "all".
++
++resource "aws_db_parameter_group" "app" {
++  name   = "${local.name}-pg-query-logging"
++  family = "postgres18"
++
++  parameter {
++    name  = "log_min_duration_statement"
++    value = "1000"
++  }
++
++  parameter {
++    name  = "log_lock_waits"
++    value = "1"
++  }
++
++  tags = {
++    Name = "${local.name}-pg-query-logging"
++  }
++}
