@@ -258,8 +258,15 @@ resource "aws_lb" "app" {
   enable_deletion_protection = true
   drop_invalid_header_fields = true
 
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.id
+    prefix  = "alb"
+    enabled = true
+  }
+
   tags = {
-    Name = "${local.name}-alb"
+    Name       = "${local.name}-alb"
+    depends_on = [aws_s3_bucket_policy.alb_logs]
   }
 }
 
