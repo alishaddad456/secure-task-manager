@@ -415,6 +415,14 @@ resource "aws_db_instance" "app" {
 
   storage_encrypted = true
 
+  iam_database_authentication_enabled = true
+
+  performance_insights_enabled          = true
+  performance_insights_retention_period = 7
+
+  monitoring_interval = 30
+  monitoring_role_arn = aws_iam_role.rds_enhanced_monitoring.arn
+
   enabled_cloudwatch_logs_exports = ["postgresql"]
   backup_retention_period         = 1
   copy_tags_to_snapshot           = true
