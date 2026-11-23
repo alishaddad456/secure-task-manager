@@ -1,0 +1,13 @@
+diff --git a/terraform/main.tf b/terraform/main.tf
+index f969f24..e8fce4c 100644
+--- a/terraform/main.tf
++++ b/terraform/main.tf
+@@ -414,7 +414,7 @@ resource "aws_db_instance" "app" {
+   vpc_security_group_ids = [aws_security_group.database.id]
+ 
+   publicly_accessible = false
+-  multi_az            = false
++  multi_az            = true
+ 
+   storage_encrypted = true
+ 

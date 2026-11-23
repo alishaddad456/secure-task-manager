@@ -411,7 +411,7 @@ resource "aws_db_instance" "app" {
   vpc_security_group_ids = [aws_security_group.database.id]
 
   publicly_accessible = false
-  multi_az            = false
+  multi_az            = true
 
   storage_encrypted = true
 
