@@ -15,9 +15,15 @@ resource "aws_db_parameter_group" "app" {
     value = "1000"
   }
 
+
   parameter {
     name  = "log_lock_waits"
     value = "1"
+  }
+  parameter {
+    name         = "rds.force_ssl"
+    value        = "1"
+    apply_method = "pending-reboot"
   }
 
   tags = {

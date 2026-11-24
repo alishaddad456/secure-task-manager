@@ -1,6 +1,6 @@
 from sqlalchemy.engine import make_url
 
-from app.database import build_database_url, render_database_url
+from app.database import build_database_url, get_db, render_database_url
 
 
 def test_database_url_defaults_to_local_sqlite(monkeypatch):
@@ -41,3 +41,38 @@ def test_render_database_url_returns_sqlite_string(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("DB_HOST", raising=False)
     assert render_database_url().startswith("sqlite:///")
+
+
+def test_database_url_prefers_explicit_database_url(monkeypatch):
+    configured_url = "postgresql+psycopg://user:password@db.example.com/tasks"
+
+    monkeypatch.setenv("DATABASE_URL", configured_url)
+    monkeypatch.setenv("DB_HOST", "another-host")
+
+    assert build_database_url() == configured_url
+
+
+def test_get_db_closes_session_after_use(monkeypatch):
+    class FakeSession:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    fake_session = FakeSession()
+
+    monkeypatch.setattr(
+        "app.database.SessionLocal",
+        lambda: fake_session,
+    )
+
+    generator = get_db()
+
+    session = next(generator)
+
+    assert session is fake_session
+    assert fake_session.closed is False
+
+    generator.close()
+
+    assert fake_session.closed is True

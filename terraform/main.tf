@@ -86,7 +86,7 @@ resource "aws_db_subnet_group" "main" {
 
 resource "aws_cloudwatch_log_group" "vpc_flow" {
   name              = "/vpc/${local.name}"
-  retention_in_days = 7
+  retention_in_days = 365
   kms_key_id        = aws_kms_key.security.arn
 
   tags = {
