@@ -57,3 +57,4 @@ tfplan-task*
 checkov-phase4-final.*
 phase4-security-groups.json
 ec2 describe-flow-logs 
+pip-inspect.json
